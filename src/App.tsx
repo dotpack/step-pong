@@ -9,6 +9,7 @@ import { Button } from './components/ui/Button';
 import { cn } from './lib/utils';
 import { useState, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
+import { DebugPanel } from './components/DebugPanel';
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -69,6 +70,7 @@ function App() {
           <ControlPanel />
         </main>
       </div>
+      <DebugPanel />
     </div>
   );
 }

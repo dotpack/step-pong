@@ -44,6 +44,7 @@ interface AppState {
     startDialogue: (initialTopic?: string) => Promise<void>;
     nextStep: () => Promise<void>;
     resetDialogue: () => void;
+    importState: (state: Partial<AppState>) => void;
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -274,6 +275,13 @@ export const useAppStore = create<AppState>()(
                 } catch (error: any) {
                     set({ status: 'error', error: error.message });
                 }
+            },
+
+            importState: (newState) => {
+                set((state) => ({
+                    ...state,
+                    ...newState,
+                }));
             },
         }),
         {
