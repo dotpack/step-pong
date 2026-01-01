@@ -3,6 +3,8 @@ import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function ChatArea() {
     const { messages, modelA, status } = useAppStore();
@@ -48,10 +50,20 @@ export function ChatArea() {
                                 <div className="flex items-center gap-2 text-xs font-semibold opacity-70 mb-1">
                                     <span>{msg.senderName}</span>
                                     <span>•</span>
-                                    <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <time dateTime={new Date(msg.timestamp).toISOString()}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
                                 </div>
-                                <div className="whitespace-pre-wrap leading-relaxed">
-                                    {msg.content}
+                                <div className={cn(
+                                    "prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed",
+                                    !isModelA && "prose-headings:text-white prose-p:text-white prose-strong:text-white prose-ul:text-white prose-ol:text-white prose-code:text-white"
+                                )}>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        components={{
+                                            a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500 transition-colors" />
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
                                 </div>
                             </div>
                         </motion.div>

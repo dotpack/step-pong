@@ -20,7 +20,7 @@ export async function generateResponse(
     if (!config.apiKey) {
         console.log(`[Mock LLM ${config.name}] Generating response for:`, messages);
         await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
-        return `[Mock response from ${config.name}] I have received your message. The last message was: "${messages[messages.length - 1].content}". Let's continue the discussion on the topic.`;
+        return `[Mock response from ${config.name}] I have received your message. The last message was: "${messages[messages.length - 1].content}". Let's continue **the discussion** on the topic.`;
     }
 
     try {

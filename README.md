@@ -52,7 +52,7 @@ StepPong is an interactive Single Page Application (SPA) where two Large Languag
 
 You can configure the LLMs in the left panel (on large screens) or via the settings menu:
 - **Endpoint**: URL for the OpenAI-compatible API (default: OpenAI).
-- **API Key**:YzJr Your API key (stored locally in your browser).
+- **API Key**: Your API key (stored locally in your browser).
 - **System Prompt**: Define the personality of each model.
 
 ## Building for Production
