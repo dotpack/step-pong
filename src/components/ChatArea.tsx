@@ -44,7 +44,7 @@ export function ChatArea() {
                             <div className={cn(
                                 "flex max-w-[85%] flex-col gap-2 rounded-2xl p-5 shadow-sm",
                                 isModelA
-                                    ? "bg-white rounded-tl-none border border-zinc-100 dark:bg-zinc-800 dark:border-zinc-700"
+                                    ? "bg-card rounded-tl-none border"
                                     : "bg-indigo-600 text-white rounded-tr-none"
                             )}>
                                 <div className="flex items-center gap-2 text-xs font-semibold opacity-70 mb-1">

@@ -41,7 +41,7 @@ function App() {
   }, [activeSessionId]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 transition-colors duration-300 flex dark:bg-zinc-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-300 flex">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className={cn(
@@ -50,7 +50,7 @@ function App() {
       )}>
         <ConfigPanel />
 
-        <header className="w-full p-6 flex items-center justify-between border-b bg-white/50 backdrop-blur-sm sticky top-0 z-30 dark:bg-zinc-900/50">
+        <header className="w-full p-6 flex items-center justify-between border-b bg-background/50 backdrop-blur-sm sticky top-0 z-30">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="w-5 h-5" />
