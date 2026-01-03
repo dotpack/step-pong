@@ -7,13 +7,12 @@ import { Sidebar } from './components/Sidebar';
 import { Menu } from 'lucide-react';
 import { Button } from './components/ui/Button';
 import { cn } from './lib/utils';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { DebugPanel } from './components/DebugPanel';
 
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const { activeSessionId, switchSession } = useAppStore();
+  const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
 
   // Sync Hash -> State (Initial Load & Change Listener)
   useEffect(() => {

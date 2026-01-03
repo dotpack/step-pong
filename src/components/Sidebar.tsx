@@ -33,7 +33,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             initial={{ x: -300 }}
                             animate={{ x: 0 }}
                             exit={{ x: -300 }}
-                            className="fixed inset-y-0 left-0 z-50 w-72 bg-card border-r shadow-xl flex flex-col"
+                            className="fixed inset-y-0 left-0 z-50 w-72 bg-card border-r shadow-xl flex flex-col dark:bg-zinc-900"
                         >
                             <div className="p-4 border-b flex items-center justify-between">
                                 <h2 className="font-semibold text-lg">History</h2>

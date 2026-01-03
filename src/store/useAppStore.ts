@@ -20,6 +20,10 @@ export interface Session {
 }
 
 interface AppState {
+    // UI State
+    isSidebarOpen: boolean;
+    setIsSidebarOpen: (open: boolean) => void;
+
     // Configuration
     modelA: LLMConfig;
     modelB: LLMConfig;
@@ -68,6 +72,9 @@ const DEFAULT_CONFIG_B: LLMConfig = {
 export const useAppStore = create<AppState>()(
     persist(
         (set, get) => ({
+            isSidebarOpen: true,
+            setIsSidebarOpen: (open) => set({ isSidebarOpen: open }),
+
             modelA: DEFAULT_CONFIG_A,
             modelB: DEFAULT_CONFIG_B,
             setModelA: (config) => set({ modelA: config }),
@@ -287,6 +294,7 @@ export const useAppStore = create<AppState>()(
         {
             name: 'llm-dialogue-storage',
             partialize: (state) => ({
+                isSidebarOpen: state.isSidebarOpen,
                 modelA: state.modelA,
                 modelB: state.modelB,
                 sessions: state.sessions,
