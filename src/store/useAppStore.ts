@@ -3,6 +3,21 @@ import { persist } from 'zustand/middleware';
 import type { LLMConfig, Message } from '../lib/llm';
 import { generateResponse } from '../lib/llm';
 
+export interface Endpoint {
+    id: string;
+    name: string;
+    url: string;
+    apiKey: string;
+    model: string;
+}
+
+export interface Character {
+    id: string;
+    name: string;
+    systemPrompt: string;
+    endpointId: string;
+}
+
 interface DialogueItem {
     id: string;
     senderId: string; // 'modelA' or 'modelB'
@@ -25,8 +40,25 @@ interface AppState {
     setIsSidebarOpen: (open: boolean) => void;
 
     // Configuration
+    endpoints: Endpoint[];
+    characters: Character[];
+
+    // Active Participants (Derived/Selected)
     modelA: LLMConfig;
     modelB: LLMConfig;
+
+    // Config Actions
+    addEndpoint: (endpoint: Endpoint) => void;
+    updateEndpoint: (id: string, endpoint: Partial<Endpoint>) => void;
+    deleteEndpoint: (id: string) => void;
+
+    addCharacter: (character: Character) => void;
+    updateCharacter: (id: string, character: Partial<Character>) => void;
+    deleteCharacter: (id: string) => void;
+
+    selectCharacter: (slot: 'modelA' | 'modelB', characterId: string) => void;
+
+    // Methods to directly set ModelConfig (legacy/custom override)
     setModelA: (config: LLMConfig) => void;
     setModelB: (config: LLMConfig) => void;
 
@@ -44,7 +76,7 @@ interface AppState {
     createSession: (topic?: string) => void;
     switchSession: (sessionId: string) => void;
     deleteSession: (sessionId: string) => void;
-    updateSessionTitle: (sessionId: string, newTitle: string) => void; // For renaming if needed, or auto-update
+    updateSessionTitle: (sessionId: string, newTitle: string) => void;
     startDialogue: (initialTopic?: string) => Promise<void>;
     nextStep: () => Promise<void>;
     resetDialogue: () => void;
@@ -75,8 +107,56 @@ export const useAppStore = create<AppState>()(
             isSidebarOpen: true,
             setIsSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
+            endpoints: [],
+            characters: [],
+
             modelA: DEFAULT_CONFIG_A,
             modelB: DEFAULT_CONFIG_B,
+
+            addEndpoint: (endpoint) => set((state) => ({ endpoints: [...state.endpoints, endpoint] })),
+            updateEndpoint: (id, updates) => set((state) => ({
+                endpoints: state.endpoints.map(ep => ep.id === id ? { ...ep, ...updates } : ep)
+            })),
+            deleteEndpoint: (id) => set((state) => ({
+                endpoints: state.endpoints.filter(ep => ep.id !== id),
+                // Optionally cascade delete characters or warn? For now just keep them but they might fail.
+            })),
+
+            addCharacter: (character) => set((state) => ({ characters: [...state.characters, character] })),
+            updateCharacter: (id, updates) => set((state) => ({
+                characters: state.characters.map(ch => ch.id === id ? { ...ch, ...updates } : ch)
+            })),
+            deleteCharacter: (id) => set((state) => ({
+                characters: state.characters.filter(ch => ch.id !== id)
+            })),
+
+            selectCharacter: (slot, characterId) => {
+                const { characters, endpoints } = get();
+                const character = characters.find(c => c.id === characterId);
+                if (!character) return;
+
+                const endpoint = endpoints.find(e => e.id === character.endpointId);
+                if (!endpoint) {
+                    console.error("Endpoint not found for character", character.name);
+                    return;
+                }
+
+                const newConfig: LLMConfig = {
+                    id: slot, // Keep the slot ID (modelA or modelB)
+                    name: character.name,
+                    endpoint: endpoint.url,
+                    apiKey: endpoint.apiKey,
+                    model: endpoint.model,
+                    systemPrompt: character.systemPrompt,
+                };
+
+                if (slot === 'modelA') {
+                    set({ modelA: newConfig });
+                } else {
+                    set({ modelB: newConfig });
+                }
+            },
+
             setModelA: (config) => set({ modelA: config }),
             setModelB: (config) => set({ modelB: config }),
 
@@ -295,6 +375,8 @@ export const useAppStore = create<AppState>()(
             name: 'llm-dialogue-storage',
             partialize: (state) => ({
                 isSidebarOpen: state.isSidebarOpen,
+                endpoints: state.endpoints,
+                characters: state.characters,
                 modelA: state.modelA,
                 modelB: state.modelB,
                 sessions: state.sessions,
