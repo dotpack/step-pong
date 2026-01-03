@@ -14,6 +14,8 @@ export function DebugPanel() {
         const data = {
             modelA: state.modelA,
             modelB: state.modelB,
+            endpoints: state.endpoints,
+            characters: state.characters,
             sessions: state.sessions,
             activeSessionId: state.activeSessionId,
             exportedAt: new Date().toISOString(),
