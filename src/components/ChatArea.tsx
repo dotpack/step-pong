@@ -44,7 +44,7 @@ export function ChatArea() {
                             <div className={cn(
                                 "flex max-w-[85%] flex-col gap-2 rounded-2xl p-5 shadow-sm",
                                 isModelA
-                                    ? "bg-white dark:bg-zinc-800 rounded-tl-none border border-zinc-100 dark:border-zinc-700"
+                                    ? "bg-white rounded-tl-none border border-zinc-100 dark:bg-zinc-800 dark:border-zinc-700"
                                     : "bg-indigo-600 text-white rounded-tr-none"
                             )}>
                                 <div className="flex items-center gap-2 text-xs font-semibold opacity-70 mb-1">
@@ -53,7 +53,7 @@ export function ChatArea() {
                                     <time dateTime={new Date(msg.timestamp).toISOString()}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
                                 </div>
                                 <div className={cn(
-                                    "prose prose-sm max-w-none dark:prose-invert break-words leading-relaxed",
+                                    "prose prose-sm max-w-none break-words leading-relaxed dark:prose-invert",
                                     !isModelA && "prose-headings:text-white prose-p:text-white prose-strong:text-white prose-ul:text-white prose-ol:text-white prose-code:text-white"
                                 )}>
                                     <ReactMarkdown
