@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Plus, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Settings, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { Endpoint, Character } from '../store/useAppStore';
 import { Button } from './ui/Button';
@@ -158,7 +158,7 @@ export function ConfigPanel() {
                                                     onChange={e => setNewEndpoint({ ...newEndpoint, name: e.target.value })}
                                                 />
                                                 <Input
-                                                    placeholder="URL (e.g. https://api.openai.com/v1/chat/completions)"
+                                                    placeholder="URL (e.g. https://openrouter.ai/api/v1/chat/completions)"
                                                     value={newEndpoint.url || ''}
                                                     onChange={e => setNewEndpoint({ ...newEndpoint, url: e.target.value })}
                                                 />

@@ -32,6 +32,8 @@ export interface Session {
     messages: DialogueItem[];
     timestamp: number;
     preview: string;
+    modelA: LLMConfig;
+    modelB: LLMConfig;
 }
 
 interface AppState {
@@ -86,7 +88,7 @@ interface AppState {
 const DEFAULT_CONFIG_A: LLMConfig = {
     id: 'modelA',
     name: 'Model A (Skeptic)',
-    endpoint: 'https://api.openai.com/v1/chat/completions',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
     apiKey: '',
     model: 'gpt-3.5-turbo',
     systemPrompt: 'You are a skeptical philosopher. You question everything and look for logical fallacies. Keep your responses concise (under 50 words) and provocative.',
@@ -95,7 +97,7 @@ const DEFAULT_CONFIG_A: LLMConfig = {
 const DEFAULT_CONFIG_B: LLMConfig = {
     id: 'modelB',
     name: 'Model B (Optimist)',
-    endpoint: 'https://api.openai.com/v1/chat/completions',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
     apiKey: '',
     model: 'gpt-3.5-turbo',
     systemPrompt: 'You are an eternal optimist. You see the good in everything and try to find constructive solutions. Keep your responses concise (under 50 words) and cheerful.',
@@ -151,14 +153,28 @@ export const useAppStore = create<AppState>()(
                 };
 
                 if (slot === 'modelA') {
-                    set({ modelA: newConfig });
+                    set((state) => ({
+                        modelA: newConfig,
+                        // Update active session if exists
+                        sessions: state.activeSessionId ? state.sessions.map(s => s.id === state.activeSessionId ? { ...s, modelA: newConfig } : s) : state.sessions
+                    }));
                 } else {
-                    set({ modelB: newConfig });
+                    set((state) => ({
+                        modelB: newConfig,
+                        // Update active session if exists
+                        sessions: state.activeSessionId ? state.sessions.map(s => s.id === state.activeSessionId ? { ...s, modelB: newConfig } : s) : state.sessions
+                    }));
                 }
             },
 
-            setModelA: (config) => set({ modelA: config }),
-            setModelB: (config) => set({ modelB: config }),
+            setModelA: (config) => set((state) => ({
+                modelA: config,
+                sessions: state.activeSessionId ? state.sessions.map(s => s.id === state.activeSessionId ? { ...s, modelA: config } : s) : state.sessions
+            })),
+            setModelB: (config) => set((state) => ({
+                modelB: config,
+                sessions: state.activeSessionId ? state.sessions.map(s => s.id === state.activeSessionId ? { ...s, modelB: config } : s) : state.sessions
+            })),
 
             topic: '',
             setTopic: (topic) => set({ topic }),
@@ -176,6 +192,8 @@ export const useAppStore = create<AppState>()(
                     messages: [],
                     timestamp: Date.now(),
                     preview: 'Empty conversation',
+                    modelA: get().modelA,
+                    modelB: get().modelB,
                 };
                 set((state) => ({
                     sessions: [newSession, ...state.sessions],
@@ -198,7 +216,10 @@ export const useAppStore = create<AppState>()(
                         topic: session.topic,
                         status: 'idle', // Reset status on switch
                         error: null,
-                        nextTurn: session.messages.length > 0 && session.messages[session.messages.length - 1].senderId === get().modelA.id ? 'modelB' : 'modelA',
+                        nextTurn: session.messages.length > 0 && session.messages[session.messages.length - 1].senderId === (session.modelA?.id || get().modelA.id) ? 'modelB' : 'modelA',
+                        // Restore participants if they exist in the session (migration support)
+                        modelA: session.modelA || get().modelA,
+                        modelB: session.modelB || get().modelB,
                     });
                 }
             },

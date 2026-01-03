@@ -2,7 +2,7 @@
 import { ConfigPanel } from './components/ConfigPanel';
 import { ChatArea } from './components/ChatArea';
 
-import { ControlPanel } from './components/ControlPanel';
+
 import { Sidebar } from './components/Sidebar';
 import { Menu } from 'lucide-react';
 import { Button } from './components/ui/Button';
@@ -65,8 +65,6 @@ function App() {
           <div className="flex-1 w-full flex flex-col">
             <ChatArea />
           </div>
-
-          <ControlPanel />
         </main>
       </div>
       <DebugPanel />
