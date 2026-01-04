@@ -6,7 +6,7 @@ import { Play, SkipForward, RefreshCw, Dice5, Plus } from 'lucide-react';
 
 
 export function ControlPanel() {
-    const { startDialogue, nextStep, status, messages, topic, characters, selectCharacter, modelA, modelB } = useAppStore();
+    const { startDialogue, nextStep, status, messages, topic, characters, selectCharacter, modelA, modelB, nextTurn } = useAppStore();
     const [inputTopic, setInputTopic] = useState('');
 
     // Helper to find selected char ID
@@ -125,9 +125,14 @@ export function ControlPanel() {
                                 </Button>
                                 <Button
                                     onClick={nextStep}
-                                    disabled={isGenerating}
+                                    disabled={isGenerating || (nextTurn === 'modelA' ? !selectedCharA : !selectedCharB)}
                                     className="min-w-[120px]"
                                     variant="premium"
+                                    title={
+                                        (nextTurn === 'modelA' && !selectedCharA) ? "Select Character A to continue" :
+                                            (nextTurn === 'modelB' && !selectedCharB) ? "Select Character B to continue" :
+                                                "Next Turn"
+                                    }
                                 >
                                     {isGenerating ? (
                                         <RefreshCw className="w-4 h-4 animate-spin mr-2" />

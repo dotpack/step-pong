@@ -1,15 +1,16 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, RotateCw, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ControlPanel } from './ControlPanel';
 
 export function ChatArea() {
-    const { messages, modelA, status } = useAppStore();
+    const { messages, modelA, status, regenerateMessage } = useAppStore();
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [confirmResetId, setConfirmResetId] = useState<string | null>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -43,15 +44,58 @@ export function ChatArea() {
                                     )}
                                 >
                                     <div className={cn(
-                                        "flex max-w-[85%] flex-col gap-2 rounded-2xl p-5 shadow-sm",
+                                        "flex max-w-[85%] flex-col gap-2 rounded-2xl p-5 shadow-sm group relative",
                                         isModelA
                                             ? "bg-card rounded-tl-none border"
                                             : "bg-indigo-600 text-white rounded-tr-none"
                                     )}>
-                                        <div className="flex items-center gap-2 text-xs font-semibold opacity-70 mb-1">
-                                            <span>{msg.senderName}</span>
-                                            <span>•</span>
-                                            <time dateTime={new Date(msg.timestamp).toISOString()}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <div className="flex items-center gap-2 text-xs font-semibold opacity-70">
+                                                <span>{msg.senderName}</span>
+                                                <span>•</span>
+                                                <time dateTime={new Date(msg.timestamp).toISOString()}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+                                            </div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {confirmResetId === msg.id ? (
+                                                    <div className="flex items-center gap-1 bg-background/50 backdrop-blur rounded-full p-0.5 border shadow-sm animate-in fade-in slide-in-from-right-2 duration-200">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                regenerateMessage(msg.id);
+                                                                setConfirmResetId(null);
+                                                            }}
+                                                            className="p-1 rounded-full hover:bg-green-500/20 text-green-500 transition-colors"
+                                                            title="Confirm Regenerate"
+                                                        >
+                                                            <Check className="w-3 h-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setConfirmResetId(null);
+                                                            }}
+                                                            className="p-1 rounded-full hover:bg-red-500/20 text-red-500 transition-colors"
+                                                            title="Cancel"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setConfirmResetId(msg.id);
+                                                        }}
+                                                        className={cn(
+                                                            "p-1 rounded-full hover:bg-black/10 transition-colors",
+                                                            !isModelA && "hover:bg-white/20"
+                                                        )}
+                                                        title="Regenerate from here"
+                                                    >
+                                                        <RotateCw className="w-3 h-3" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className={cn(
                                             "prose prose-sm max-w-none break-words leading-relaxed dark:prose-invert",

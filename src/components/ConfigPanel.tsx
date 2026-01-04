@@ -40,6 +40,7 @@ export function ConfigPanel() {
                 url: newEndpoint.url,
                 apiKey: newEndpoint.apiKey || '',
                 model: newEndpoint.model || 'gpt-3.5-turbo',
+                createdAt: Date.now(),
             } as Endpoint);
             setNewEndpoint({});
             setIsAddingEndpoint(false);
@@ -72,6 +73,7 @@ export function ConfigPanel() {
                 name: newCharacter.name,
                 systemPrompt: newCharacter.systemPrompt || '',
                 endpointId: newCharacter.endpointId,
+                createdAt: Date.now(),
             } as Character);
             setNewCharacter({});
             setIsAddingCharacter(false);
@@ -291,71 +293,73 @@ export function ConfigPanel() {
                                         </Card>
                                     )}
 
-                                    {characters.map(char => {
-                                        const linkedEndpoint = endpoints.find(e => e.id === char.endpointId);
-                                        return (
-                                            <Card key={char.id}>
-                                                <CardContent className="pt-6">
-                                                    {editingCharacterId === char.id ? (
-                                                        <div className="space-y-3">
-                                                            <Input
-                                                                placeholder="Name"
-                                                                value={editCharacterData.name || ''}
-                                                                onChange={e => setEditCharacterData({ ...editCharacterData, name: e.target.value })}
-                                                            />
-                                                            <Textarea
-                                                                placeholder="System Prompt"
-                                                                value={editCharacterData.systemPrompt || ''}
-                                                                onChange={e => setEditCharacterData({ ...editCharacterData, systemPrompt: e.target.value })}
-                                                            />
-                                                            <select
-                                                                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                                                                value={editCharacterData.endpointId || ''}
-                                                                onChange={e => setEditCharacterData({ ...editCharacterData, endpointId: e.target.value })}
-                                                            >
-                                                                <option value="" disabled>Select Endpoint...</option>
-                                                                {endpoints.map(ep => (
-                                                                    <option key={ep.id} value={ep.id}>{ep.name} ({ep.model})</option>
-                                                                ))}
-                                                            </select>
-                                                            <div className="flex gap-2 justify-end">
-                                                                <Button variant="ghost" size="sm" onClick={cancelEditingCharacter}>Cancel</Button>
-                                                                <Button size="sm" onClick={saveEditingCharacter}>Save</Button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="space-y-1">
-                                                                <div className="font-semibold">{char.name}</div>
-                                                                <div className="text-xs text-muted-foreground/80 line-clamp-2">{char.systemPrompt}</div>
-                                                                <div className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full inline-block mt-2">
-                                                                    {linkedEndpoint ? `${linkedEndpoint.name}` : 'Unknown Endpoint'}
+                                    {characters
+                                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                                        .map(char => {
+                                            const linkedEndpoint = endpoints.find(e => e.id === char.endpointId);
+                                            return (
+                                                <Card key={char.id}>
+                                                    <CardContent className="pt-6">
+                                                        {editingCharacterId === char.id ? (
+                                                            <div className="space-y-3">
+                                                                <Input
+                                                                    placeholder="Name"
+                                                                    value={editCharacterData.name || ''}
+                                                                    onChange={e => setEditCharacterData({ ...editCharacterData, name: e.target.value })}
+                                                                />
+                                                                <Textarea
+                                                                    placeholder="System Prompt"
+                                                                    value={editCharacterData.systemPrompt || ''}
+                                                                    onChange={e => setEditCharacterData({ ...editCharacterData, systemPrompt: e.target.value })}
+                                                                />
+                                                                <select
+                                                                    className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                                                                    value={editCharacterData.endpointId || ''}
+                                                                    onChange={e => setEditCharacterData({ ...editCharacterData, endpointId: e.target.value })}
+                                                                >
+                                                                    <option value="" disabled>Select Endpoint...</option>
+                                                                    {endpoints.map(ep => (
+                                                                        <option key={ep.id} value={ep.id}>{ep.name} ({ep.model})</option>
+                                                                    ))}
+                                                                </select>
+                                                                <div className="flex gap-2 justify-end">
+                                                                    <Button variant="ghost" size="sm" onClick={cancelEditingCharacter}>Cancel</Button>
+                                                                    <Button size="sm" onClick={saveEditingCharacter}>Save</Button>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex gap-1">
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 hover:bg-muted"
-                                                                    onClick={() => startEditingCharacter(char)}
-                                                                >
-                                                                    <Edit2 className="w-4 h-4" />
-                                                                </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                                                    onClick={() => setItemToDelete({ type: 'character', id: char.id })}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
+                                                        ) : (
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="space-y-1">
+                                                                    <div className="font-semibold">{char.name}</div>
+                                                                    <div className="text-xs text-muted-foreground/80 line-clamp-2">{char.systemPrompt}</div>
+                                                                    <div className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full inline-block mt-2">
+                                                                        {linkedEndpoint ? `${linkedEndpoint.name}` : 'Unknown Endpoint'}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-1">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 hover:bg-muted"
+                                                                        onClick={() => startEditingCharacter(char)}
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                                        onClick={() => setItemToDelete({ type: 'character', id: char.id })}
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        );
-                                    })}
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
 
                                     {characters.length === 0 && !isAddingCharacter && (
                                         <div className="text-center p-8 text-muted-foreground bg-muted/20 rounded-lg">

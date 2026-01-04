@@ -9,6 +9,7 @@ export interface Endpoint {
     url: string;
     apiKey: string;
     model: string;
+    createdAt?: number;
 }
 
 export interface Character {
@@ -16,6 +17,7 @@ export interface Character {
     name: string;
     systemPrompt: string;
     endpointId: string;
+    createdAt?: number;
 }
 
 interface DialogueItem {
@@ -83,6 +85,7 @@ interface AppState {
     nextStep: () => Promise<void>;
     resetDialogue: () => void;
     importState: (state: Partial<AppState>) => void;
+    regenerateMessage: (messageId: string) => Promise<void>;
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -390,6 +393,49 @@ export const useAppStore = create<AppState>()(
                     ...state,
                     ...newState,
                 }));
+            },
+
+            regenerateMessage: async (messageId) => {
+                const { messages, activeSessionId, startDialogue, nextStep } = get();
+                const index = messages.findIndex(m => m.id === messageId);
+
+                if (index === -1) return;
+
+                // Slice messages to keep everything before the target
+                const newMessages = messages.slice(0, index);
+                const targetMessage = messages[index];
+
+                // Determine who should speak next (the sender of the message being regenerated)
+                const nextTurn = targetMessage.senderId === get().modelA.id ? 'modelA' : 'modelB';
+
+                // Update state immediately
+                set({
+                    messages: newMessages,
+                    status: 'idle',
+                    nextTurn: nextTurn,
+                    error: null
+                });
+
+                // Sync to session
+                if (activeSessionId) {
+                    set((state) => ({
+                        sessions: state.sessions.map(s =>
+                            s.id === activeSessionId
+                                ? { ...s, messages: newMessages, preview: newMessages.length > 0 ? newMessages[newMessages.length - 1].content.substring(0, 50) + '...' : 'Empty conversation' }
+                                : s
+                        )
+                    }));
+                }
+
+                // Trigger generation
+                if (newMessages.length === 0) {
+                    // If we deleted everything, restart completely
+                    // But we likely want to keep the topic. 
+                    // startDialogue uses current topic if not provided.
+                    await startDialogue();
+                } else {
+                    await nextStep();
+                }
             },
         }),
         {
