@@ -183,67 +183,69 @@ export function ConfigPanel() {
                                         </Card>
                                     )}
 
-                                    {endpoints.map(ep => (
-                                        <Card key={ep.id} className="relative group">
-                                            <CardContent className="pt-6">
-                                                {editingEndpointId === ep.id ? (
-                                                    <div className="space-y-3">
-                                                        <Input
-                                                            placeholder="Name"
-                                                            value={editEndpointData.name || ''}
-                                                            onChange={e => setEditEndpointData({ ...editEndpointData, name: e.target.value })}
-                                                        />
-                                                        <Input
-                                                            placeholder="URL"
-                                                            value={editEndpointData.url || ''}
-                                                            onChange={e => setEditEndpointData({ ...editEndpointData, url: e.target.value })}
-                                                        />
-                                                        <Input
-                                                            placeholder="API Key"
-                                                            type="password"
-                                                            value={editEndpointData.apiKey || ''}
-                                                            onChange={e => setEditEndpointData({ ...editEndpointData, apiKey: e.target.value })}
-                                                        />
-                                                        <Input
-                                                            placeholder="Model"
-                                                            value={editEndpointData.model || ''}
-                                                            onChange={e => setEditEndpointData({ ...editEndpointData, model: e.target.value })}
-                                                        />
-                                                        <div className="flex gap-2 justify-end">
-                                                            <Button variant="ghost" size="sm" onClick={cancelEditingEndpoint}>Cancel</Button>
-                                                            <Button size="sm" onClick={saveEditingEndpoint}>Save</Button>
+                                    {endpoints
+                                        .sort((a, b) => b.createdAt - a.createdAt)
+                                        .map(ep => (
+                                            <Card key={ep.id} className="relative group">
+                                                <CardContent className="pt-6">
+                                                    {editingEndpointId === ep.id ? (
+                                                        <div className="space-y-3">
+                                                            <Input
+                                                                placeholder="Name"
+                                                                value={editEndpointData.name || ''}
+                                                                onChange={e => setEditEndpointData({ ...editEndpointData, name: e.target.value })}
+                                                            />
+                                                            <Input
+                                                                placeholder="URL"
+                                                                value={editEndpointData.url || ''}
+                                                                onChange={e => setEditEndpointData({ ...editEndpointData, url: e.target.value })}
+                                                            />
+                                                            <Input
+                                                                placeholder="API Key"
+                                                                type="password"
+                                                                value={editEndpointData.apiKey || ''}
+                                                                onChange={e => setEditEndpointData({ ...editEndpointData, apiKey: e.target.value })}
+                                                            />
+                                                            <Input
+                                                                placeholder="Model"
+                                                                value={editEndpointData.model || ''}
+                                                                onChange={e => setEditEndpointData({ ...editEndpointData, model: e.target.value })}
+                                                            />
+                                                            <div className="flex gap-2 justify-end">
+                                                                <Button variant="ghost" size="sm" onClick={cancelEditingEndpoint}>Cancel</Button>
+                                                                <Button size="sm" onClick={saveEditingEndpoint}>Save</Button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <div className="font-semibold">{ep.name}</div>
-                                                            <div className="text-sm text-muted-foreground">{ep.url}</div>
-                                                            <div className="text-xs text-muted-foreground mt-1">Model: {ep.model}</div>
+                                                    ) : (
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <div className="font-semibold">{ep.name}</div>
+                                                                <div className="text-sm text-muted-foreground">{ep.url}</div>
+                                                                <div className="text-xs text-muted-foreground mt-1">Model: {ep.model}</div>
+                                                            </div>
+                                                            <div className="flex gap-1 opacity-100">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 hover:bg-muted"
+                                                                    onClick={() => startEditingEndpoint(ep)}
+                                                                >
+                                                                    <Edit2 className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                                                    onClick={() => setItemToDelete({ type: 'endpoint', id: ep.id })}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex gap-1 opacity-100">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 hover:bg-muted"
-                                                                onClick={() => startEditingEndpoint(ep)}
-                                                            >
-                                                                <Edit2 className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                                                onClick={() => setItemToDelete({ type: 'endpoint', id: ep.id })}
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    ))}
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        ))}
 
                                     {endpoints.length === 0 && !isAddingEndpoint && (
                                         <div className="text-center p-8 text-muted-foreground bg-muted/20 rounded-lg">
@@ -294,7 +296,7 @@ export function ConfigPanel() {
                                     )}
 
                                     {characters
-                                        .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                                        .sort((a, b) => b.createdAt - a.createdAt)
                                         .map(char => {
                                             const linkedEndpoint = endpoints.find(e => e.id === char.endpointId);
                                             return (

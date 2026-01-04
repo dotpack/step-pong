@@ -9,7 +9,7 @@ export interface Endpoint {
     url: string;
     apiKey: string;
     model: string;
-    createdAt?: number;
+    createdAt: number;
 }
 
 export interface Character {
@@ -17,7 +17,7 @@ export interface Character {
     name: string;
     systemPrompt: string;
     endpointId: string;
-    createdAt?: number;
+    createdAt: number;
 }
 
 interface DialogueItem {
@@ -104,6 +104,27 @@ const DEFAULT_CONFIG_B: LLMConfig = {
     apiKey: '',
     model: 'gpt-3.5-turbo',
     systemPrompt: 'You are an eternal optimist. You see the good in everything and try to find constructive solutions. Keep your responses concise (under 50 words) and cheerful.',
+};
+
+const normalizeState = (state: any): Partial<AppState> => {
+    return {
+        ...state,
+        endpoints: Array.isArray(state.endpoints)
+            ? state.endpoints.map((ep: any) => ({
+                ...ep,
+                createdAt: typeof ep.createdAt === 'number' ? ep.createdAt : 0
+            }))
+            : [],
+        characters: Array.isArray(state.characters)
+            ? state.characters.map((ch: any) => ({
+                ...ch,
+                createdAt: typeof ch.createdAt === 'number' ? ch.createdAt : 0
+            }))
+            : [],
+        sessions: Array.isArray(state.sessions) ? state.sessions : [],
+        // Ensure optional fields are handled (though TS handles undefined fine, runtime might need cleanup if coming from raw JSON)
+        // We strictly trust the arrays to be arrays.
+    };
 };
 
 export const useAppStore = create<AppState>()(
@@ -389,9 +410,10 @@ export const useAppStore = create<AppState>()(
             },
 
             importState: (newState) => {
+                const normalized = normalizeState(newState);
                 set((state) => ({
                     ...state,
-                    ...newState,
+                    ...normalized,
                 }));
             },
 
@@ -440,6 +462,12 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'llm-dialogue-storage',
+            version: 1,
+            migrate: (persistedState: any, version: number) => {
+                // If version is 0 or undefined, we just normalize what we have.
+                // In future versions, we can add specific migration logic here.
+                return normalizeState(persistedState) as AppState;
+            },
             partialize: (state) => ({
                 isSidebarOpen: state.isSidebarOpen,
                 endpoints: state.endpoints,
