@@ -463,7 +463,7 @@ export const useAppStore = create<AppState>()(
         {
             name: 'llm-dialogue-storage',
             version: 1,
-            migrate: (persistedState: any, version: number) => {
+            migrate: (persistedState: any, _version: number) => {
                 // If version is 0 or undefined, we just normalize what we have.
                 // In future versions, we can add specific migration logic here.
                 return normalizeState(persistedState) as AppState;
