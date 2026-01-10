@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LLMConfig, Message } from '../lib/llm';
 import { generateResponse } from '../lib/llm';
+import type { User } from '@supabase/supabase-js';
 
 export interface Endpoint {
     id: string;
@@ -86,6 +87,12 @@ interface AppState {
     resetDialogue: () => void;
     importState: (state: Partial<AppState>) => void;
     regenerateMessage: (messageId: string) => Promise<void>;
+
+    // Auth & Sync
+    user: User | null;
+    setUser: (user: User | null) => void;
+    lastSynced: number;
+    setLastSynced: (time: number) => void;
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -208,6 +215,12 @@ export const useAppStore = create<AppState>()(
             status: 'idle',
             nextTurn: 'modelA',
             error: null,
+
+            // Auth & Sync
+            user: null,
+            setUser: (user) => set({ user }),
+            lastSynced: 0,
+            setLastSynced: (lastSynced) => set({ lastSynced }),
 
             createSession: (initialTopic = 'New Conversation') => {
                 const newSession: Session = {

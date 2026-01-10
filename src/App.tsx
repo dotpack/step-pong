@@ -10,6 +10,7 @@ import { cn } from './lib/utils';
 import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { DebugPanel } from './components/DebugPanel';
+import { SupabaseSync } from './components/SupabaseSync';
 
 function App() {
   const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
@@ -68,6 +69,7 @@ function App() {
         </main>
       </div>
       <DebugPanel />
+      <SupabaseSync />
     </div>
   );
 }
