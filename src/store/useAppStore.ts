@@ -33,6 +33,7 @@ export interface Session {
     topic: string;
     messages: DialogueItem[];
     timestamp: number;
+    updatedAt: number;
     preview: string;
     modelA: LLMConfig;
     modelB: LLMConfig;
@@ -130,7 +131,12 @@ const normalizeState = (state: any): Partial<AppState> => {
                 createdAt: typeof ch.createdAt === 'number' ? ch.createdAt : 0
             }))
             : [],
-        sessions: Array.isArray(state.sessions) ? state.sessions : [],
+        sessions: Array.isArray(state.sessions)
+            ? state.sessions.map((s: any) => ({
+                ...s,
+                updatedAt: typeof s.updatedAt === 'number' ? s.updatedAt : s.timestamp || Date.now()
+            }))
+            : [],
         // Ensure optional fields are handled (though TS handles undefined fine, runtime might need cleanup if coming from raw JSON)
         // We strictly trust the arrays to be arrays.
     };
@@ -224,6 +230,7 @@ export const useAppStore = create<AppState>()(
                     topic: initialTopic,
                     messages: [],
                     timestamp: Date.now(),
+                    updatedAt: Date.now(),
                     preview: 'Empty conversation',
                     modelA: get().modelA,
                     modelB: get().modelB,
@@ -303,7 +310,8 @@ export const useAppStore = create<AppState>()(
             },
 
             startDialogue: async (initialTopic) => {
-                let { activeSessionId, createSession, topic, modelA } = get();
+                const { createSession, topic, modelA } = get();
+                let { activeSessionId } = get();
 
                 // If no active session, create one
                 if (!activeSessionId) {
@@ -348,7 +356,7 @@ export const useAppStore = create<AppState>()(
                     set((state) => ({
                         sessions: state.sessions.map(s =>
                             s.id === state.activeSessionId
-                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...' }
+                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now() }
                                 : s
                         )
                     }));
@@ -409,7 +417,7 @@ export const useAppStore = create<AppState>()(
                     set((state) => ({
                         sessions: state.sessions.map(s =>
                             s.id === state.activeSessionId
-                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...' }
+                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now() }
                                 : s
                         )
                     }));
@@ -469,7 +477,12 @@ export const useAppStore = create<AppState>()(
                     set((state) => ({
                         sessions: state.sessions.map(s =>
                             s.id === activeSessionId
-                                ? { ...s, messages: newMessages, preview: newMessages.length > 0 ? newMessages[newMessages.length - 1].content.substring(0, 50) + '...' : 'Empty conversation' }
+                                ? {
+                                    ...s,
+                                    messages: newMessages,
+                                    preview: newMessages.length > 0 ? newMessages[newMessages.length - 1].content.substring(0, 50) + '...' : 'Empty conversation',
+                                    updatedAt: Date.now()
+                                }
                                 : s
                         )
                     }));
