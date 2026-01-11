@@ -5,6 +5,7 @@ import { Plus, MessageSquare, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { ConfirmationDialog } from './ui/ConfirmationDialog';
+import { SupabaseSync } from './SupabaseSync';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -107,8 +108,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 ))}
                             </div>
 
-                            <div className="p-4 border-t text-xs text-center text-muted-foreground">
-                                v1.1 • Local Storage
+                            <div className="p-4 border-t space-y-4">
+                                <SupabaseSync className="justify-center w-full" />
+                                <div className="text-xs text-center text-muted-foreground">
+                                    v1.2 • Cloud Sync
+                                </div>
                             </div>
                         </motion.div>
                     </>

@@ -10,6 +10,7 @@ import { cn } from './lib/utils';
 import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { DebugPanel } from './components/DebugPanel';
+import { SupabaseManager } from './components/SupabaseManager';
 
 function App() {
   const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
@@ -42,6 +43,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-300 flex">
+      <SupabaseManager />
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className={cn(

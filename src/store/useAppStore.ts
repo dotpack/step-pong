@@ -85,7 +85,16 @@ interface AppState {
     nextStep: () => Promise<void>;
     resetDialogue: () => void;
     importState: (state: Partial<AppState>) => void;
+    importSettings: (settings: Partial<AppState>) => void;
     regenerateMessage: (messageId: string) => Promise<void>;
+
+    // Auth & Sync State
+    user: any;
+    syncStatus: 'idle' | 'syncing' | 'saved' | 'error';
+    lastSynced: number | null;
+    setUser: (user: any) => void;
+    setSyncStatus: (status: 'idle' | 'syncing' | 'saved' | 'error') => void;
+    setLastSynced: (time: number) => void;
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -417,6 +426,23 @@ export const useAppStore = create<AppState>()(
                 }));
             },
 
+            importSettings: (settings) => {
+                set((state) => ({
+                    endpoints: settings.endpoints || state.endpoints,
+                    characters: settings.characters || state.characters,
+                    modelA: settings.modelA || state.modelA,
+                    modelB: settings.modelB || state.modelB,
+                }));
+            },
+
+            // Auth State Implementation
+            user: null,
+            syncStatus: 'idle',
+            lastSynced: null,
+            setUser: (user) => set({ user }),
+            setSyncStatus: (status) => set({ syncStatus: status }),
+            setLastSynced: (time) => set({ lastSynced: time }),
+
             regenerateMessage: async (messageId) => {
                 const { messages, activeSessionId, startDialogue, nextStep } = get();
                 const index = messages.findIndex(m => m.id === messageId);
@@ -476,6 +502,7 @@ export const useAppStore = create<AppState>()(
                 modelB: state.modelB,
                 sessions: state.sessions,
                 activeSessionId: state.activeSessionId
+                // explicitly exclude user, syncStatus, lastSynced
             }),
         }
     )
