@@ -96,6 +96,7 @@ interface AppState {
     setUser: (user: any) => void;
     setSyncStatus: (status: 'idle' | 'syncing' | 'saved' | 'error') => void;
     setLastSynced: (time: number) => void;
+    mergeSessions: (remoteSessions: Session[]) => Session[];
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -450,6 +451,36 @@ export const useAppStore = create<AppState>()(
             setUser: (user) => set({ user }),
             setSyncStatus: (status) => set({ syncStatus: status }),
             setLastSynced: (time) => set({ lastSynced: time }),
+
+            mergeSessions: (remoteSessions) => {
+                const { sessions } = get();
+                // Use a Map for the master list
+                const masterMap = new Map(sessions.map(s => [s.id, s]));
+
+                remoteSessions.forEach(remote => {
+                    const local = masterMap.get(remote.id);
+                    if (!local) {
+                        masterMap.set(remote.id, remote);
+                    } else if (remote.updatedAt > local.updatedAt) {
+                        masterMap.set(remote.id, remote);
+                    }
+                });
+
+                // Sort by updatedAt descending
+                const finalSessions = Array.from(masterMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+
+                set({ sessions: finalSessions });
+
+                // Identify sessions that need to be pushed to server
+                const remoteMap = new Map(remoteSessions.map(s => [s.id, s]));
+                const toPush = finalSessions.filter(local => {
+                    const remote = remoteMap.get(local.id);
+                    if (!remote) return true; // New local (that wasn't in remoteSessions)
+                    return local.updatedAt > remote.updatedAt; // Local newer
+                });
+
+                return toPush;
+            },
 
             regenerateMessage: async (messageId) => {
                 const { messages, activeSessionId, startDialogue, nextStep } = get();
