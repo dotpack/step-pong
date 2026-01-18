@@ -9,7 +9,7 @@ import { Button } from './components/ui/Button';
 import { cn } from './lib/utils';
 import { useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
-import { DebugPanel } from './components/DebugPanel';
+
 import { SupabaseManager } from './components/SupabaseManager';
 
 function App() {
@@ -69,7 +69,7 @@ function App() {
           </div>
         </main>
       </div>
-      <DebugPanel />
+
     </div>
   );
 }
