@@ -48,3 +48,49 @@ export async function generateResponse(
         throw error;
     }
 }
+
+export interface TestResult {
+    success: boolean;
+    message: string;
+    model?: string;
+    contextWindow?: number;
+    latencyMs?: number;
+}
+
+export async function testEndpointConnection(config: LLMConfig): Promise<TestResult> {
+    const start = Date.now();
+    try {
+        const response = await fetch(config.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.apiKey}`,
+            },
+            body: JSON.stringify({
+                model: config.model,
+                messages: [{ role: 'user', content: 'Hi' }],
+                max_tokens: 1 // We just want to check connection
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        // If we got here, generation worked
+        return {
+            success: true,
+            message: "Connection Verified (via Generation).",
+            model: config.model,
+            latencyMs: Date.now() - start
+        };
+
+    } catch (error: any) {
+        return {
+            success: false,
+            message: error.message || "Connection Failed",
+            latencyMs: Date.now() - start
+        };
+    }
+}

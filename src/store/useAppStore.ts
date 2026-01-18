@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { supabase } from '../lib/supabase';
 import type { LLMConfig, Message } from '../lib/llm';
 import { generateResponse } from '../lib/llm';
 
@@ -80,7 +81,7 @@ interface AppState {
     // Actions
     createSession: (topic?: string) => void;
     switchSession: (sessionId: string) => void;
-    deleteSession: (sessionId: string) => void;
+    deleteSession: (sessionId: string) => Promise<void>;
     updateSessionTitle: (sessionId: string, newTitle: string) => void;
     startDialogue: (initialTopic?: string) => Promise<void>;
     nextStep: () => Promise<void>;
@@ -223,6 +224,7 @@ export const useAppStore = create<AppState>()(
             activeSessionId: null,
             status: 'idle',
             nextTurn: 'modelA',
+
             error: null,
 
             createSession: (initialTopic = 'New Conversation') => {
@@ -265,23 +267,45 @@ export const useAppStore = create<AppState>()(
                 }
             },
 
-            deleteSession: (sessionId) => {
+            deleteSession: async (sessionId) => {
+                // Optimistic? No, user requested pessimistic.
+                // 1. Delete from Supabase first if logged in
+                const { user } = get();
+                if (user) {
+                    const { error } = await supabase
+                        .from('sessions')
+                        .delete()
+                        .eq('id', sessionId)
+                        .eq('user_id', user.id);
+
+                    if (error) {
+                        console.error('Failed to delete session from Supabase:', error);
+                        // Stop here to enforce pessimistic update
+                        // Or maybe show error notification? 
+                        // For now, we just throw or return so UI doesn't update
+                        return;
+                    }
+                }
+
                 set((state) => {
                     const newSessions = state.sessions.filter((s) => s.id !== sessionId);
                     // If deleting active session, switch to first available or reset
                     let newActiveId = state.activeSessionId;
                     let newMessages = state.messages;
                     let newTopic = state.topic;
+                    let newNextTurn = state.nextTurn;
 
                     if (state.activeSessionId === sessionId) {
                         if (newSessions.length > 0) {
                             newActiveId = newSessions[0].id;
                             newMessages = newSessions[0].messages;
                             newTopic = newSessions[0].topic;
+                            newNextTurn = newSessions[0].messages.length > 0 && newSessions[0].messages[newSessions[0].messages.length - 1].senderId === (newSessions[0].modelA?.id || get().modelA.id) ? 'modelB' : 'modelA';
                         } else {
                             newActiveId = null;
                             newMessages = [];
                             newTopic = '';
+                            newNextTurn = 'modelA';
                         }
                     }
 
@@ -290,6 +314,7 @@ export const useAppStore = create<AppState>()(
                         activeSessionId: newActiveId,
                         messages: newMessages,
                         topic: newTopic,
+                        nextTurn: newNextTurn,
                     };
                 });
             },
@@ -466,6 +491,10 @@ export const useAppStore = create<AppState>()(
                     }
                 });
 
+                // deletedSessionIds logic removed for pessimistic sync
+                // const { deletedSessionIds } = get();
+                // deletedSessionIds.forEach(id => masterMap.delete(id));
+
                 // Sort by updatedAt descending
                 const finalSessions = Array.from(masterMap.values()).sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -545,7 +574,7 @@ export const useAppStore = create<AppState>()(
                 modelA: state.modelA,
                 modelB: state.modelB,
                 sessions: state.sessions,
-                activeSessionId: state.activeSessionId
+                activeSessionId: state.activeSessionId,
                 // explicitly exclude user, syncStatus, lastSynced
             }),
         }

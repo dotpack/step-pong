@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './Button';
 import { AlertTriangle } from 'lucide-react';
@@ -6,7 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 interface ConfirmationDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: () => Promise<void> | void;
     title: string;
     description: string;
     confirmText?: string;
@@ -22,6 +22,35 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     confirmText = "Delete",
     cancelText = "Cancel"
 }) => {
+    const confirmButtonRef = useRef<HTMLButtonElement>(null);
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            // Small timeout to ensure animation/mounting is ready
+            const timer = setTimeout(() => {
+                confirmButtonRef.current?.focus();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -58,13 +87,27 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                                     {cancelText}
                                 </Button>
                                 <Button
+                                    ref={confirmButtonRef}
                                     variant="destructive"
-                                    onClick={() => {
-                                        onConfirm();
-                                        onClose();
+                                    disabled={isLoading}
+                                    onClick={async () => {
+                                        setIsLoading(true);
+                                        try {
+                                            await onConfirm();
+                                            onClose();
+                                        } catch (error) {
+                                            console.error("Confirmation action failed", error);
+                                        } finally {
+                                            if (isOpen) setIsLoading(false); // Only update if still mounted/open
+                                        }
                                     }}
                                 >
-                                    {confirmText}
+                                    {isLoading ? (
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                                            {confirmText}
+                                        </span>
+                                    ) : confirmText}
                                 </Button>
                             </div>
                         </motion.div>

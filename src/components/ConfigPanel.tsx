@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Settings, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Settings, Plus, Trash2, Edit2, Play, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { Endpoint, Character } from '../store/useAppStore';
+import { testEndpointConnection, type TestResult, type LLMConfig } from '../lib/llm';
 import { Button } from './ui/Button';
 import { Card, CardContent } from './ui/Card';
 import { Input } from './ui/Input';
@@ -30,6 +31,39 @@ export function ConfigPanel() {
     const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
     const [editEndpointData, setEditEndpointData] = useState<Partial<Endpoint>>({});
     const [editCharacterData, setEditCharacterData] = useState<Partial<Character>>({});
+
+    // Test States
+    const [testResult, setTestResult] = useState<TestResult | null>(null);
+    const [isTesting, setIsTesting] = useState(false);
+
+    const handleTestConnection = async (data: Partial<Endpoint>) => {
+        if (!data.url || !data.apiKey) return;
+
+        setIsTesting(true);
+        setTestResult(null);
+
+        try {
+            const config: LLMConfig = {
+                id: 'test',
+                name: 'Test',
+                endpoint: data.url,
+                apiKey: data.apiKey,
+                model: data.model || 'gpt-3.5-turbo',
+                systemPrompt: ''
+            };
+
+            const result = await testEndpointConnection(config);
+            setTestResult(result);
+        } catch (error) {
+            setTestResult({
+                success: false,
+                message: 'Test failed unexpectedly',
+                latencyMs: 0
+            });
+        } finally {
+            setIsTesting(false);
+        }
+    };
 
     // Endpoint Helpers
     const handleSaveNewEndpoint = () => {
@@ -175,10 +209,32 @@ export function ConfigPanel() {
                                                     value={newEndpoint.model || ''}
                                                     onChange={e => setNewEndpoint({ ...newEndpoint, model: e.target.value })}
                                                 />
-                                                <div className="flex gap-2 justify-end">
+                                                <div className="flex gap-2 justify-end items-center">
+                                                    {testResult && (
+                                                        <div className={`text-xs flex items-center gap-1 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                                                            {testResult.success ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                            {testResult.success ? `${testResult.latencyMs}ms` : 'Error'}
+                                                            {testResult.contextWindow && ` (${testResult.contextWindow} tokens)`}
+                                                        </div>
+                                                    )}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleTestConnection(newEndpoint)}
+                                                        disabled={isTesting || !newEndpoint.url || !newEndpoint.apiKey}
+                                                    >
+                                                        {isTesting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1" />}
+                                                        Test
+                                                    </Button>
+                                                    <div className="w-px h-4 bg-border mx-1" />
                                                     <Button variant="ghost" size="sm" onClick={() => setIsAddingEndpoint(false)}>Cancel</Button>
                                                     <Button size="sm" onClick={handleSaveNewEndpoint}>Save</Button>
                                                 </div>
+                                                {testResult && !testResult.success && (
+                                                    <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                                        {testResult.message}
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     )}
@@ -211,10 +267,32 @@ export function ConfigPanel() {
                                                                 value={editEndpointData.model || ''}
                                                                 onChange={e => setEditEndpointData({ ...editEndpointData, model: e.target.value })}
                                                             />
-                                                            <div className="flex gap-2 justify-end">
+                                                            <div className="flex gap-2 justify-end items-center">
+                                                                {testResult && (
+                                                                    <div className={`text-xs flex items-center gap-1 ${testResult.success ? 'text-green-500' : 'text-red-500'}`}>
+                                                                        {testResult.success ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                                                                        {testResult.success ? `${testResult.latencyMs}ms` : 'Error'}
+                                                                        {testResult.contextWindow && ` (${testResult.contextWindow} tokens)`}
+                                                                    </div>
+                                                                )}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleTestConnection(editEndpointData)}
+                                                                    disabled={isTesting || !editEndpointData.url || !editEndpointData.apiKey}
+                                                                >
+                                                                    {isTesting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1" />}
+                                                                    Test
+                                                                </Button>
+                                                                <div className="w-px h-4 bg-border mx-1" />
                                                                 <Button variant="ghost" size="sm" onClick={cancelEditingEndpoint}>Cancel</Button>
                                                                 <Button size="sm" onClick={saveEditingEndpoint}>Save</Button>
                                                             </div>
+                                                            {testResult && !testResult.success && (
+                                                                <div className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                                                    {testResult.message}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <div className="flex justify-between items-start">

@@ -122,9 +122,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <ConfirmationDialog
                 isOpen={!!deleteConfirmation}
                 onClose={() => setDeleteConfirmation(null)}
-                onConfirm={() => {
+                onConfirm={async () => {
                     if (deleteConfirmation) {
-                        deleteSession(deleteConfirmation);
+                        await deleteSession(deleteConfirmation);
                     }
                 }}
                 title="Delete Chat"

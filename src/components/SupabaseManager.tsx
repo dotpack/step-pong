@@ -177,6 +177,9 @@ export function SupabaseManager() {
         if (error) console.error('Error pushing sessions:', error);
     };
 
+    // deletedSessionIds watching removed as we now handle it pessimistically in the store action
+    // useEffect(() => { ... }, [useAppStore.getState().deletedSessionIds, user]);
+
     // Watch for session changes
     useEffect(() => {
         if (!user) return;
