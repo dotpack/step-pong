@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAppStore } from '../store/useAppStore';
 
@@ -18,19 +18,28 @@ export function SupabaseManager() {
     } = useAppStore();
 
     // Initial Auth Check & Listener
-    useEffect(() => {
-        // Initial session check
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                loadUserData(session.user.id);
-            }
-        });
+    const isHydrating = useRef(false);
 
+    useEffect(() => {
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // Optimization: Only load data on meaningful potential user changes
+            // INITIAL_SESSION: App startup
+            // SIGNED_IN: User logged in
+            // SIGNED_OUT: User logged out
+            // We ignore TOKEN_REFRESHED to avoid re-fetching on window focus
+
+            const currentUser = useAppStore.getState().user;
+            const newUserId = session?.user?.id;
+            const currentUserId = currentUser?.id;
+
+            if (event === 'TOKEN_REFRESHED' && newUserId === currentUserId) {
+                return;
+            }
+
             setUser(session?.user ?? null);
-            if (session?.user) {
+
+            if (session?.user && newUserId !== currentUserId) {
                 loadUserData(session.user.id);
             }
         });
@@ -40,7 +49,7 @@ export function SupabaseManager() {
 
     // Auto-sync Settings
     useEffect(() => {
-        if (!user) return;
+        if (!user || isHydrating.current) return;
 
         const syncSettings = async () => {
             // ... existing syncSettings logic ...
@@ -79,7 +88,7 @@ export function SupabaseManager() {
         const timeoutId = setTimeout(syncSettings, 2000); // Debounce 2s
         return () => clearTimeout(timeoutId);
 
-    }, [endpoints, characters, modelA, modelB, user]); // Settings dependencies only
+    }, [endpoints, characters, user]); // Settings dependencies only (excluded modelA/B to prevent sync on session switch)
 
     // Auto-sync Sessions
     useEffect(() => {
@@ -102,6 +111,7 @@ export function SupabaseManager() {
     // We'll use a local ref to track when we last pushed, and only push items newer than that.
 
     const loadUserData = async (userId: string) => {
+        isHydrating.current = true;
         setSyncStatus('syncing');
 
         // 1. Load Settings
@@ -151,6 +161,10 @@ export function SupabaseManager() {
         }
 
         setSyncStatus('idle');
+        // Allow sync again after a short delay to let state settle
+        setTimeout(() => {
+            isHydrating.current = false;
+        }, 1000);
     };
 
     const pushSessions = async (sessionsToPush: any[]) => {
@@ -191,7 +205,7 @@ export function SupabaseManager() {
             const activeSession = sessions.find(s => s.id === activeSessionId);
             const sessionsToPush = [];
 
-            if (activeSession) {
+            if (activeSession && !activeSession.isUnsavedNew) {
                 sessionsToPush.push(activeSession);
             }
 
