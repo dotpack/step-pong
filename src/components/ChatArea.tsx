@@ -2,15 +2,42 @@ import { useRef, useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
-import { Sparkles, RotateCw, Check, X } from 'lucide-react';
+import { Sparkles, RotateCw, Check, X, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ControlPanel } from './ControlPanel';
 
 export function ChatArea() {
-    const { messages, modelA, status, regenerateMessage } = useAppStore();
+    const { messages, modelA, status, regenerateMessage, shareSession } = useAppStore();
     const scrollRef = useRef<HTMLDivElement>(null);
     const [confirmResetId, setConfirmResetId] = useState<string | null>(null);
+    const [justSharedId, setJustSharedId] = useState<string | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (justSharedId) {
+            const timer = setTimeout(() => setJustSharedId(null), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [justSharedId]);
+
+    useEffect(() => {
+        if (toastMessage) {
+            const timer = setTimeout(() => setToastMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toastMessage]);
+
+    const handleShare = async (messageId: string) => {
+        const result = await shareSession(messageId);
+        if (result) {
+            // Use simplified URL without messageId (defaults to first message)
+            const url = `${window.location.origin}/#/share/${result.shareId}`;
+            navigator.clipboard.writeText(url);
+            setJustSharedId(messageId);
+            setToastMessage("Link copied to clipboard!");
+        }
+    };
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -56,6 +83,20 @@ export function ChatArea() {
                                                 <time dateTime={new Date(msg.timestamp).toISOString()}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
                                             </div>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleShare(msg.id);
+                                                    }}
+                                                    className={cn(
+                                                        "p-1 rounded-full hover:bg-black/10 transition-colors",
+                                                        !isModelA && "hover:bg-white/20",
+                                                        justSharedId === msg.id && "text-green-500"
+                                                    )}
+                                                    title="Share snapshot up to this message"
+                                                >
+                                                    {justSharedId === msg.id ? <Check className="w-3 h-3" /> : <Share2 className="w-3 h-3" />}
+                                                </button>
                                                 {confirmResetId === msg.id ? (
                                                     <div className="flex items-center gap-1 bg-background/50 backdrop-blur rounded-full p-0.5 border shadow-sm animate-in fade-in slide-in-from-right-2 duration-200">
                                                         <button
@@ -124,7 +165,7 @@ export function ChatArea() {
                         >
                             <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full text-xs font-medium text-muted-foreground animate-pulse">
                                 <Sparkles className="w-3 h-3" />
-                                Thinking...
+                                thinking...
                             </div>
                         </motion.div>
                     )}
@@ -138,6 +179,22 @@ export function ChatArea() {
                     <div ref={scrollRef} />
                 </div>
             </div>
+
+            <AnimatePresence>
+                {toastMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 20, x: '-50%' }}
+                        transition={{ duration: 0.3 }}
+                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-foreground text-background rounded-full shadow-lg text-sm font-medium flex items-center gap-2"
+                    >
+                        <Check className="w-4 h-4 text-green-500" />
+                        {toastMessage}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <ControlPanel />
         </div>
     );

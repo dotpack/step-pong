@@ -1,25 +1,36 @@
 
 import { ConfigPanel } from './components/ConfigPanel';
 import { ChatArea } from './components/ChatArea';
+import { SharedSessionView } from './components/SharedSessionView';
 
 
 import { Sidebar } from './components/Sidebar';
 import { Menu } from 'lucide-react';
 import { Button } from './components/ui/Button';
 import { cn } from './lib/utils';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from './store/useAppStore';
 
 import { SupabaseManager } from './components/SupabaseManager';
 
 function App() {
   const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
+  const [isSharedView, setIsSharedView] = useState(false);
 
   // Sync Hash -> State (Initial Load & Change Listener)
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1); // remove #
-      if (hash) {
+
+      // Check for share route: /share/...
+      if (hash.startsWith('/share/')) {
+        setIsSharedView(true);
+        return;
+      } else {
+        setIsSharedView(false);
+      }
+
+      if (hash && !hash.startsWith('/')) {
         switchSession(hash);
       }
     };
@@ -33,13 +44,14 @@ function App() {
 
   // Sync State -> Hash
   useEffect(() => {
-    if (activeSessionId) {
+    if (activeSessionId && !isSharedView) {
       window.location.hash = activeSessionId;
-    } else {
-      // Optional: clear hash if no session, or keep last?
-      // window.location.hash = ''; 
     }
-  }, [activeSessionId]);
+  }, [activeSessionId, isSharedView]);
+
+  if (isSharedView) {
+    return <SharedSessionView />;
+  }
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-300 flex">

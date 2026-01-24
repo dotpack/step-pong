@@ -98,6 +98,7 @@ interface AppState {
     setSyncStatus: (status: 'idle' | 'syncing' | 'saved' | 'error') => void;
     setLastSynced: (time: number) => void;
     mergeSessions: (remoteSessions: Session[]) => Session[];
+    shareSession: (messageId: string) => Promise<{ shareId: string; firstMessageId: string } | null>;
 }
 
 const DEFAULT_CONFIG_A: LLMConfig = {
@@ -557,6 +558,62 @@ export const useAppStore = create<AppState>()(
                 } else {
                     await nextStep();
                 }
+            },
+
+            shareSession: async (messageId) => {
+                const { activeSessionId, sessions, user } = get();
+                const session = sessions.find((s) => s.id === activeSessionId);
+
+                if (!session || !user) return null;
+
+                const messageIndex = session.messages.findIndex((m) => m.id === messageId);
+                if (messageIndex === -1) return null;
+
+                // Slice up to the specific message (inclusive)
+                const slicedMessages = session.messages.slice(0, messageIndex + 1);
+
+                if (slicedMessages.length === 0) return null;
+
+                // Check if already shared by this user
+                const { data: existingShare } = await supabase
+                    .from('shared_sessions')
+                    .select('id')
+                    .eq('original_session_id', session.id)
+                    .eq('original_message_id', messageId)
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (existingShare) {
+                    return {
+                        shareId: existingShare.id,
+                        firstMessageId: slicedMessages[0].id
+                    };
+                }
+
+                const content = {
+                    topic: session.topic,
+                    messages: slicedMessages
+                };
+
+                const { data, error } = await supabase
+                    .from('shared_sessions')
+                    .insert({
+                        original_session_id: session.id,
+                        original_message_id: messageId,
+                        content: content
+                    })
+                    .select('id')
+                    .single();
+
+                if (error) {
+                    console.error('Failed to share session:', error);
+                    return null;
+                }
+
+                return {
+                    shareId: data.id,
+                    firstMessageId: slicedMessages[0].id
+                };
             },
         }),
         {

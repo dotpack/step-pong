@@ -62,3 +62,30 @@ CREATE POLICY "Users can update their own sessions"
 CREATE POLICY "Users can delete their own sessions"
     ON sessions FOR DELETE
     USING (auth.uid() = user_id);
+
+CREATE TABLE shared_sessions (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id uuid REFERENCES auth.users DEFAULT auth.uid(),
+    original_session_id uuid,
+    original_message_id uuid,
+    content jsonb,
+    created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE shared_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Shared sessions are viewable by everyone"
+    ON shared_sessions FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can insert their own shared sessions"
+    ON shared_sessions FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own shared sessions"
+    ON shared_sessions FOR DELETE
+    USING (auth.uid() = user_id);
+
+CREATE UNIQUE INDEX idx_shared_sessions_dedup 
+    ON shared_sessions(user_id, original_session_id, original_message_id);
+

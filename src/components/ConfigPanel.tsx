@@ -54,7 +54,7 @@ export function ConfigPanel() {
 
             const result = await testEndpointConnection(config);
             setTestResult(result);
-        } catch (error) {
+        } catch {
             setTestResult({
                 success: false,
                 message: 'Test failed unexpectedly',
