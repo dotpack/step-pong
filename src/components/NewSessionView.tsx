@@ -49,24 +49,24 @@ export function NewSessionView() {
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 animate-in fade-in duration-500">
-            <div className="max-w-2xl w-full space-y-12">
-                <div className="text-center space-y-4">
-                    <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 leading-tight pb-2">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 animate-in fade-in duration-500 overflow-y-auto">
+            <div className="max-w-2xl w-full space-y-6 md:space-y-8 py-4">
+                <div className="text-center space-y-2">
+                    <h1 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 leading-tight pb-1">
                         StepPong
                     </h1>
-                    <p className="text-xl text-muted-foreground">
+                    <p className="text-base md:text-lg text-muted-foreground">
                         Orchestrate an infinite debate between two AI personas.
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-4">
                     {/* Speaker A */}
-                    <Card className="border-indigo-500/20 bg-indigo-500/5">
-                        <CardContent className="pt-6 space-y-4">
-                            <h3 className="font-semibold text-indigo-600 dark:text-indigo-400">Speaker A</h3>
+                    <Card className="border-indigo-500/20 bg-indigo-500/5 shadow-none">
+                        <CardContent className="p-4 space-y-3">
+                            <h3 className="font-semibold text-indigo-600 dark:text-indigo-400 text-sm md:text-base">Speaker A</h3>
                             <select
-                                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="w-full flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 value={characters.find(c => c.name === modelA.name)?.id || ''}
                                 onChange={(e) => selectCharacter('modelA', e.target.value)}
                             >
@@ -75,18 +75,18 @@ export function NewSessionView() {
                                     <option key={char.id} value={char.id}>{char.name}</option>
                                 ))}
                             </select>
-                            <div className="text-xs text-muted-foreground min-h-[3em]">
-                                {modelA.systemPrompt.slice(0, 100)}...
+                            <div className="text-xs text-muted-foreground min-h-[2.5em] line-clamp-2">
+                                {modelA.systemPrompt}
                             </div>
                         </CardContent>
                     </Card>
 
                     {/* Speaker B */}
-                    <Card className="border-purple-500/20 bg-purple-500/5">
-                        <CardContent className="pt-6 space-y-4">
-                            <h3 className="font-semibold text-purple-600 dark:text-purple-400">Speaker B</h3>
+                    <Card className="border-purple-500/20 bg-purple-500/5 shadow-none">
+                        <CardContent className="p-4 space-y-3">
+                            <h3 className="font-semibold text-purple-600 dark:text-purple-400 text-sm md:text-base">Speaker B</h3>
                             <select
-                                className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                className="w-full flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 value={characters.find(c => c.name === modelB.name)?.id || ''}
                                 onChange={(e) => selectCharacter('modelB', e.target.value)}
                             >
@@ -95,17 +95,17 @@ export function NewSessionView() {
                                     <option key={char.id} value={char.id}>{char.name}</option>
                                 ))}
                             </select>
-                            <div className="text-xs text-muted-foreground min-h-[3em]">
-                                {modelB.systemPrompt.slice(0, 100)}...
+                            <div className="text-xs text-muted-foreground min-h-[2.5em] line-clamp-2">
+                                {modelB.systemPrompt}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="space-y-4 bg-card p-6 rounded-xl shadow-sm border">
+                <div className="space-y-3 bg-card p-4 rounded-xl shadow-sm border">
                     <div className="flex justify-between items-center">
                         <label className="text-sm font-medium">Topic of Debate</label>
-                        <Button variant="ghost" size="sm" onClick={handleRandomTopic} className="text-xs h-7">
+                        <Button variant="ghost" size="sm" onClick={handleRandomTopic} className="text-xs h-7 px-2">
                             <Dice5 className="w-3 h-3 mr-1" /> Random
                         </Button>
                     </div>
@@ -114,22 +114,22 @@ export function NewSessionView() {
                             placeholder="e.g. Is it ethical to clone dinosaurs?"
                             value={topic}
                             onChange={(e) => setTopic(e.target.value)}
-                            className="text-lg py-6"
+                            className="text-base py-5"
                             autoFocus
                             onKeyDown={(e) => e.key === 'Enter' && handleStart()}
                         />
                     </div>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-2">
                     <Button
                         size="lg"
                         onClick={handleStart}
                         disabled={!topic.trim() || isSubmitting}
-                        className="text-lg px-8 py-6 rounded-full shadow-lg hover:scale-105 transition-transform w-full md:w-auto"
+                        className="text-base px-8 py-6 rounded-full shadow-md hover:scale-105 transition-transform w-full md:w-auto font-medium"
                     >
                         {isSubmitting ? 'Initializing...' : 'Start Conversation'}
-                        {!isSubmitting && <ChevronRight className="ml-2 w-5 h-5" />}
+                        {!isSubmitting && <ChevronRight className="ml-2 w-4 h-4" />}
                     </Button>
                 </div>
             </div>
