@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Plus, Trash2, Edit2, Play, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Settings, Plus, Trash2, Edit2, Play, CheckCircle, AlertCircle, Loader2, Copy } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import type { Endpoint, Character } from '../store/useAppStore';
 import { testEndpointConnection, type TestResult, type LLMConfig } from '../lib/llm';
@@ -97,6 +97,15 @@ export function ConfigPanel() {
     const cancelEditingEndpoint = () => {
         setEditingEndpointId(null);
         setEditEndpointData({});
+    };
+
+    const handleDuplicateEndpoint = (ep: Endpoint) => {
+        addEndpoint({
+            ...ep,
+            id: crypto.randomUUID(),
+            name: `${ep.name} (Copy)`,
+            createdAt: Date.now(),
+        });
     };
 
     // Character Helpers
@@ -307,14 +316,25 @@ export function ConfigPanel() {
                                                                     size="icon"
                                                                     className="h-8 w-8 hover:bg-muted"
                                                                     onClick={() => startEditingEndpoint(ep)}
+                                                                    title="Edit"
                                                                 >
                                                                     <Edit2 className="w-4 h-4" />
                                                                 </Button>
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
+                                                                    className="h-8 w-8 hover:bg-muted"
+                                                                    onClick={() => handleDuplicateEndpoint(ep)}
+                                                                    title="Duplicate"
+                                                                >
+                                                                    <Copy className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
                                                                     className="h-8 w-8 text-destructive hover:text-destructive"
                                                                     onClick={() => setItemToDelete({ type: 'endpoint', id: ep.id })}
+                                                                    title="Delete"
                                                                 >
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </Button>
