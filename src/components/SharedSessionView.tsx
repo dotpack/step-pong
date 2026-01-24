@@ -20,6 +20,9 @@ interface SharedContent {
     messages: Message[];
 }
 
+const sessionCache = new Map<string, SharedContent>();
+const pendingRequests = new Map<string, Promise<any>>();
+
 export function SharedSessionView() {
     // Parse URL: #/share/<shareId>/[<currentMessageId>]
     const getParams = () => {
@@ -34,9 +37,21 @@ export function SharedSessionView() {
 
     const initialParams = getParams();
     const scrollRef = useRef<HTMLDivElement>(null);
-    const [loading, setLoading] = useState(!!initialParams);
+    // Initialize with cache if available to avoid loading state logic flicker
+    const [loading, setLoading] = useState(() => {
+        if (!initialParams) return false;
+        return !sessionCache.has(initialParams.shareId);
+    });
+
     const [error, setError] = useState<string | null>(initialParams ? null : "Invalid shared link.");
-    const [content, setContent] = useState<SharedContent | null>(null);
+
+    const [content, setContent] = useState<SharedContent | null>(() => {
+        if (initialParams && sessionCache.has(initialParams.shareId)) {
+            return sessionCache.get(initialParams.shareId)!;
+        }
+        return null;
+    });
+
     const [visibleMessages, setVisibleMessages] = useState<Message[]>([]);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -75,39 +90,59 @@ export function SharedSessionView() {
     };
 
     useEffect(() => {
-        // Did we start with valid params?
-        // We can just re-check getParams or use a ref, but re-checking is fine as this effect runs once.
         const params = getParams();
-        if (!params) {
-            // Error state already set via initializer if it was invalid at mount
-            // But if it became invalid (unlikely for empty dep effect), we might need to handle it.
-            // Actually, this effect handles the FETCH.
-            // If params are missing, we just don't fetch.
+        if (!params) return;
+
+        // Dedup logic: check cache first
+        if (sessionCache.has(params.shareId)) {
+            const data = sessionCache.get(params.shareId)!;
+            setContent(data);
+            updateVisibleMessages(data, params.messageId);
+            setLoading(false);
             return;
         }
 
         const fetchSession = async () => {
             setLoading(true);
-            const { data, error } = await supabase
-                .from('shared_sessions')
-                .select('content')
-                .eq('id', params.shareId)
-                .single();
 
-            if (error || !data) {
-                setError("Shared session not found.");
+            try {
+                let data;
+
+                // Dedup logic: check pending requests
+                if (pendingRequests.has(params.shareId)) {
+                    data = await pendingRequests.get(params.shareId);
+                } else {
+                    const sbPromise = supabase
+                        .from('shared_sessions')
+                        .select('content')
+                        .eq('id', params.shareId)
+                        .single();
+
+                    // Convert to standard promise to safely store in Map
+                    const promise = Promise.resolve(sbPromise);
+
+                    pendingRequests.set(params.shareId, promise);
+                    data = await promise;
+                    pendingRequests.delete(params.shareId);
+                }
+
+                if (data.error || !data.data) {
+                    setError("Shared session not found.");
+                    setLoading(false);
+                    return;
+                }
+
+                const sharedContent = data.data.content as SharedContent;
+                sessionCache.set(params.shareId, sharedContent);
+
+                setContent(sharedContent);
+                updateVisibleMessages(sharedContent, params.messageId);
+            } catch (err) {
+                console.error(err);
+                setError("Failed to load session.");
+            } finally {
                 setLoading(false);
-                return;
             }
-
-            const sharedContent = data.content as SharedContent;
-            setContent(sharedContent);
-
-            // Determine visible messages based on URL messageId
-            // However, we should only set this initially or if content changes.
-            // But we actually depend on URL change for navigation.
-            updateVisibleMessages(sharedContent, params.messageId);
-            setLoading(false);
         };
 
         fetchSession();
