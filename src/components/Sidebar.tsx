@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { Button } from './ui/Button';
-import { Plus, MessageSquare, Trash2, X } from 'lucide-react';
+import { MessageSquare, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { ConfirmationDialog } from './ui/ConfirmationDialog';
@@ -14,7 +14,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const {
-        sessions, activeSessionId, switchSession, createSession, deleteSession
+        sessions, activeSessionId, deleteSession
     } = useAppStore();
     const [deleteConfirmation, setDeleteConfirmation] = React.useState<string | null>(null);
 
@@ -47,16 +47,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             </div>
 
                             <div className="p-4">
-                                <Button
-                                    className="w-full justify-start gap-2"
-                                    onClick={() => {
-                                        createSession();
-                                        if (window.innerWidth < 1024) onClose();
-                                    }}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    New Chat
-                                </Button>
+                                {/* New Chat button removed, replaced by Home landing page */}
                             </div>
 
 
@@ -76,7 +67,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 : "hover:bg-muted/50"
                                         )}
                                         onClick={() => {
-                                            switchSession(session.id);
+                                            window.location.hash = `/sessions/${session.id}`;
                                             if (window.innerWidth < 1024) onClose();
                                         }}
                                     >

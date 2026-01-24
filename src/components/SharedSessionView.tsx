@@ -76,16 +76,18 @@ export function SharedSessionView() {
 
         if (targetMessageId) {
             index = fullContent.messages.findIndex(m => m.id === targetMessageId);
-        } else if (fullContent.messages.length > 0) {
-            // Default to first message if no specific ID
-            index = 0;
+        } else {
+            // No specific ID -> Landing Page Mode (don't show any messages yet)
+            setVisibleMessages([]);
+            return;
         }
 
         if (index !== -1) {
             setVisibleMessages(fullContent.messages.slice(0, index + 1));
         } else {
-            // Fallback (shouldn't really happen if there are messages)
-            setVisibleMessages(fullContent.messages);
+            // Fallback (invalid ID) -> Show all? Or just Landing?
+            // Let's fallback to Landing to be safe.
+            setVisibleMessages([]);
         }
     };
 
@@ -163,7 +165,17 @@ export function SharedSessionView() {
 
 
     const handleNextTurn = () => {
-        if (!content || visibleMessages.length === 0) return;
+        if (!content) return;
+
+        // If on landing page (no visible messages)
+        if (visibleMessages.length === 0) {
+            const firstMessage = content.messages[0];
+            const params = getParams();
+            if (params && firstMessage) {
+                window.location.hash = `/share/${params.shareId}/${firstMessage.id}`;
+            }
+            return;
+        }
 
         const lastVisible = visibleMessages[visibleMessages.length - 1];
         const lastIndex = content.messages.findIndex(m => m.id === lastVisible.id);
@@ -207,6 +219,37 @@ export function SharedSessionView() {
         );
     }
 
+    // LANDING VIEW
+    if (visibleMessages.length === 0 && content) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 text-center animate-in fade-in duration-500">
+                <div className="max-w-2xl w-full space-y-8">
+                    <div className="space-y-4">
+                        <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 leading-tight pb-1">
+                            {content.topic}
+                        </h1>
+                        <p className="text-muted-foreground text-lg">
+                            A unique conversation snapshot
+                        </p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
+                        <div className="bg-secondary/50 px-4 py-2 rounded-full border border-border/50 flex items-center gap-2">
+                            <span>{content.messages.length} messages</span>
+                            <span>•</span>
+                            <span>{new Date(content.messages[0].timestamp).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+
+                    <Button size="lg" className="text-lg px-8 py-6 rounded-full shadow-lg hover:scale-105 transition-transform" onClick={handleNextTurn}>
+                        Start Reading <ChevronRight className="ml-2 w-5 h-5" />
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // MAIN VIEW (Existing)
     return (
         <div className="flex flex-col h-full relative min-h-screen bg-background">
             <header className="w-full p-6 flex items-center justify-between border-b bg-background/50 backdrop-blur-sm sticky top-0 z-30">

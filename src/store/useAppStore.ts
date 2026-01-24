@@ -85,6 +85,7 @@ interface AppState {
     deleteSession: (sessionId: string) => Promise<void>;
     updateSessionTitle: (sessionId: string, newTitle: string) => void;
     startDialogue: (initialTopic?: string) => Promise<void>;
+    startSessionWithFirstTurn: (topic: string) => Promise<string | null>; // Returns session ID on success
     nextStep: () => Promise<void>;
     resetDialogue: () => void;
     importState: (state: Partial<AppState>) => void;
@@ -98,6 +99,7 @@ interface AppState {
     setUser: (user: any) => void;
     setSyncStatus: (status: 'idle' | 'syncing' | 'saved' | 'error') => void;
     setLastSynced: (time: number) => void;
+
     mergeSessions: (remoteSessions: Session[]) => Session[];
     shareSession: (messageId: string) => Promise<{ shareId: string; firstMessageId: string } | null>;
 }
@@ -391,6 +393,53 @@ export const useAppStore = create<AppState>()(
                     }));
                 } catch (error: any) {
                     set({ status: 'error', error: error.message });
+                }
+            },
+
+            startSessionWithFirstTurn: async (topic) => {
+                const { modelA, createSession } = get();
+
+                try {
+                    const promptMessages: Message[] = [
+                        { role: 'system', content: modelA.systemPrompt },
+                        { role: 'user', content: `The topic is: "${topic}". Start a conversation about this.` }
+                    ];
+
+                    // Helper to wait? No, await works.
+                    const content = await generateResponse(modelA, promptMessages);
+
+                    // Now create the session
+                    createSession(topic);
+                    const { activeSessionId } = get(); // grab the new ID
+
+                    if (!activeSessionId) throw new Error("Failed to create session");
+
+                    // Prepare message
+                    const newMessage: DialogueItem = {
+                        id: crypto.randomUUID(),
+                        senderId: modelA.id,
+                        senderName: modelA.name,
+                        content,
+                        timestamp: Date.now()
+                    };
+
+                    // Update store
+                    set((state) => ({
+                        messages: [newMessage],
+                        status: 'paused',
+                        nextTurn: 'modelB',
+                        // Sync to session
+                        sessions: state.sessions.map(s =>
+                            s.id === activeSessionId
+                                ? { ...s, messages: [newMessage], preview: content.slice(0, 50) + '...', updatedAt: Date.now(), isUnsavedNew: false }
+                                : s
+                        )
+                    }));
+
+                    return activeSessionId;
+                } catch (error) {
+                    console.error("Failed to start session:", error);
+                    return null;
                 }
             },
 

@@ -2,6 +2,7 @@
 import { ConfigPanel } from './components/ConfigPanel';
 import { ChatArea } from './components/ChatArea';
 import { SharedSessionView } from './components/SharedSessionView';
+import { NewSessionView } from './components/NewSessionView';
 
 
 import { Sidebar } from './components/Sidebar';
@@ -16,6 +17,7 @@ import { SupabaseManager } from './components/SupabaseManager';
 function App() {
   const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
   const [isSharedView, setIsSharedView] = useState(() => window.location.hash.startsWith('#/share/'));
+  const [isNewSessionView, setIsNewSessionView] = useState(false);
 
   // Sync Hash -> State (Initial Load & Change Listener)
   useEffect(() => {
@@ -25,9 +27,20 @@ function App() {
       // Check for share route: /share/...
       if (hash.startsWith('/share/')) {
         setIsSharedView(true);
+        setIsNewSessionView(false);
         return;
       } else {
         setIsSharedView(false);
+      }
+
+      // Check for landing/new session route: /sessions (exact) or empty
+      if (hash === '/sessions' || hash === '') {
+        setIsNewSessionView(true);
+        // Clear active session in store? Maybe not required if UI just hides it.
+        // But good for cleanliness.
+        return;
+      } else {
+        setIsNewSessionView(false);
       }
 
       if (hash.startsWith('/sessions/')) {
@@ -48,10 +61,10 @@ function App() {
 
   // Sync State -> Hash
   useEffect(() => {
-    // If we are currently in a shared URL, do NOT overwrite with activeSessionId
-    if (window.location.hash.includes('#/share/')) return;
+    // If we are currently in a shared URL or New Session URL, do NOT overwrite with activeSessionId
+    if (window.location.hash.includes('#/share/') || window.location.hash === '#/sessions') return;
 
-    if (activeSessionId && !isSharedView) {
+    if (activeSessionId && !isSharedView && !isNewSessionView) {
       const currentHash = window.location.hash.slice(1);
       const expectedHash = `/sessions/${activeSessionId}`;
       if (currentHash !== expectedHash) {
@@ -64,6 +77,9 @@ function App() {
     return <SharedSessionView />;
   }
 
+  // Common Layout for App (Sidebar + Header + Content)
+  // Logic: If new session view, show NewSessionView
+  // Else show ChatArea
   return (
     <div className="min-h-screen bg-background font-sans text-foreground transition-colors duration-300 flex">
       <SupabaseManager />
@@ -80,7 +96,10 @@ function App() {
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+            <h1
+              className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => window.location.hash = '/sessions'}
+            >
               StepPong
             </h1>
           </div>
@@ -88,7 +107,7 @@ function App() {
 
         <main className="flex-1 w-full flex flex-col items-center">
           <div className="flex-1 w-full flex flex-col">
-            <ChatArea />
+            {isNewSessionView ? <NewSessionView /> : <ChatArea />}
           </div>
         </main>
       </div>

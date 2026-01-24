@@ -37,6 +37,12 @@ export function SupabaseManager() {
                 return;
             }
 
+            if (newUserId === currentUserId) {
+                // If IDs match, don't update store to prevent useEffect re-runs
+                // unless we need to update metadata? For now assume stable ID is sufficient.
+                return;
+            }
+
             setUser(session?.user ?? null);
 
             if (session?.user && newUserId !== currentUserId) {
