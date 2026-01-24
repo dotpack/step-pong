@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../lib/utils';
+import { cn, getShareLink } from '../lib/utils';
 import { ChevronRight, AlertCircle, Home, Link as LinkIcon, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -50,7 +50,7 @@ export function SharedSessionView() {
     const handleCopyLink = (messageId: string) => {
         const params = getParams();
         if (params?.shareId) {
-            const url = `${window.location.origin}/#/share/${params.shareId}/${messageId}`;
+            const url = getShareLink(params.shareId, messageId);
             navigator.clipboard.writeText(url);
             setToastMessage("Link copied to clipboard!");
         }

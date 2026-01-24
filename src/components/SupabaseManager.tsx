@@ -200,6 +200,9 @@ export function SupabaseManager() {
             const RecentThreshold = 60 * 1000;
 
             sessions.forEach(s => {
+                // Skip if unsaved new session
+                if (s.isUnsavedNew) return;
+
                 if (s.id !== activeSessionId && (now - s.updatedAt) < RecentThreshold) {
                     sessionsToPush.push(s);
                 }

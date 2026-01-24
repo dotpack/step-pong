@@ -38,6 +38,7 @@ export interface Session {
     preview: string;
     modelA: LLMConfig;
     modelB: LLMConfig;
+    isUnsavedNew?: boolean; // If true, this session has not yet been synced/saved and shouldn't be until content exists
 }
 
 interface AppState {
@@ -238,6 +239,7 @@ export const useAppStore = create<AppState>()(
                     preview: 'Empty conversation',
                     modelA: get().modelA,
                     modelB: get().modelB,
+                    isUnsavedNew: true,
                 };
                 set((state) => ({
                     sessions: [newSession, ...state.sessions],
@@ -383,7 +385,7 @@ export const useAppStore = create<AppState>()(
                     set((state) => ({
                         sessions: state.sessions.map(s =>
                             s.id === state.activeSessionId
-                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now() }
+                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now(), isUnsavedNew: false }
                                 : s
                         )
                     }));
@@ -444,7 +446,7 @@ export const useAppStore = create<AppState>()(
                     set((state) => ({
                         sessions: state.sessions.map(s =>
                             s.id === state.activeSessionId
-                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now() }
+                                ? { ...s, messages: state.messages, preview: content.substring(0, 50) + '...', updatedAt: Date.now(), isUnsavedNew: false }
                                 : s
                         )
                     }));
@@ -504,6 +506,8 @@ export const useAppStore = create<AppState>()(
                 // Identify sessions that need to be pushed to server
                 const remoteMap = new Map(remoteSessions.map(s => [s.id, s]));
                 const toPush = finalSessions.filter(local => {
+                    if (local.isUnsavedNew) return false; // Never push unsaved/empty new sessions
+
                     const remote = remoteMap.get(local.id);
                     if (!remote) return true; // New local (that wasn't in remoteSessions)
                     return local.updatedAt > remote.updatedAt; // Local newer
@@ -542,7 +546,8 @@ export const useAppStore = create<AppState>()(
                                     ...s,
                                     messages: newMessages,
                                     preview: newMessages.length > 0 ? newMessages[newMessages.length - 1].content.substring(0, 50) + '...' : 'Empty conversation',
-                                    updatedAt: Date.now()
+                                    updatedAt: Date.now(),
+                                    isUnsavedNew: false
                                 }
                                 : s
                         )

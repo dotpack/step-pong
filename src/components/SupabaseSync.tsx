@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getBaseUrl } from '../lib/utils';
 import { useAppStore } from '../store/useAppStore';
 import { Button } from './ui/Button';
 import { LogIn, LogOut } from 'lucide-react';
@@ -72,7 +73,7 @@ export function SupabaseSync({ className }: SupabaseSyncProps) {
         await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.href.split('#')[0]
+                redirectTo: getBaseUrl()
             }
         });
     };
@@ -97,8 +98,8 @@ export function SupabaseSync({ className }: SupabaseSyncProps) {
                 onClick={handleManualSync}
                 disabled={syncStatus === 'syncing'}
                 className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${syncStatus === 'syncing' ? 'bg-orange-400 animate-pulse' :
-                        syncStatus === 'error' ? 'bg-destructive' :
-                            'bg-green-500 hover:scale-125'
+                    syncStatus === 'error' ? 'bg-destructive' :
+                        'bg-green-500 hover:scale-125'
                     }`}
                 title={syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Error syncing' : `Synced ${lastSynced ? new Date(lastSynced).toLocaleTimeString() : ''}`}
             />

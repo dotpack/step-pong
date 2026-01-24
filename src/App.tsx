@@ -15,7 +15,7 @@ import { SupabaseManager } from './components/SupabaseManager';
 
 function App() {
   const { activeSessionId, switchSession, isSidebarOpen, setIsSidebarOpen } = useAppStore();
-  const [isSharedView, setIsSharedView] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(() => window.location.hash.startsWith('#/share/'));
 
   // Sync Hash -> State (Initial Load & Change Listener)
   useEffect(() => {
@@ -30,8 +30,12 @@ function App() {
         setIsSharedView(false);
       }
 
-      if (hash && !hash.startsWith('/')) {
-        switchSession(hash);
+      if (hash.startsWith('/sessions/')) {
+        const sessionId = hash.replace('/sessions/', '');
+        switchSession(sessionId);
+      } else if (hash && !hash.startsWith('/')) {
+        // Legacy: Redirect to new format if it looks like a session ID (not starting with /)
+        window.location.hash = '/sessions/' + hash;
       }
     };
 
@@ -44,8 +48,15 @@ function App() {
 
   // Sync State -> Hash
   useEffect(() => {
+    // If we are currently in a shared URL, do NOT overwrite with activeSessionId
+    if (window.location.hash.includes('#/share/')) return;
+
     if (activeSessionId && !isSharedView) {
-      window.location.hash = activeSessionId;
+      const currentHash = window.location.hash.slice(1);
+      const expectedHash = `/sessions/${activeSessionId}`;
+      if (currentHash !== expectedHash) {
+        window.location.hash = expectedHash;
+      }
     }
   }, [activeSessionId, isSharedView]);
 

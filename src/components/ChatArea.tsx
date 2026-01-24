@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../lib/utils';
+import { cn, getShareLink } from '../lib/utils';
 import { Sparkles, RotateCw, Check, X, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -32,7 +32,7 @@ export function ChatArea() {
         const result = await shareSession(messageId);
         if (result) {
             // Use simplified URL without messageId (defaults to first message)
-            const url = `${window.location.origin}/#/share/${result.shareId}`;
+            const url = getShareLink(result.shareId);
             navigator.clipboard.writeText(url);
             setJustSharedId(messageId);
             setToastMessage("Link copied to clipboard!");
